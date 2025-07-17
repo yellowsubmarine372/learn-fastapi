@@ -14,7 +14,12 @@ dependencies = [
     "passlib[bcrypt] (>=1.7.4,<2.0.0)",
     "sqlalchemy (>=2.0.40,<3.0.0)",
     "mysqlclient (>=2.2.7,<3.0.0)",
-    "alembic (>=1.15.2,<2.0.0)"
+    "alembic (>=1.15.2,<2.0.0)",
+    "dependency-injector (>=4.46.0,<5.0.0)",
+    "bcrypt (<4.0)",
+    "pydantic[email] (>=2.11.3,<3.0.0)",
+    "python-jose[cyptography] (>=3.4.0,<4.0.0)",
+    "python-multipart (>=0.0.20,<0.0.21)"
 ]
 
 
