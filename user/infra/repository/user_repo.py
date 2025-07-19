@@ -9,10 +9,10 @@ class UserRepository(IUserRepository):
     def save(self, user: UserV0):
         new_user = User(
             id=user.id,
-            email=user.profile.email,
-            name=user.profile.name,
+            name=user.name,
+            email=user.email,
             password=user.password,
-            memo=user.profile.memo,
+            memo=user.memo,
             created_at=user.created_at,
             updated_at=user.updated_at
         )

@@ -28,13 +28,25 @@ def create_user(
     user: CreateUserBody,
     user_service: UserService = Depends(Provide[Container.user_service]),
     ) -> UserResponse:
+    print("request:", user)
     created_user = user_service.create_user(
         name=user.name,
         email=user.email,
         password=user.password
     )
-    
-    return created_user
+    print("created_user:", created_user)
+    print("created_user type:", type(created_user))
+
+    response = UserResponse(
+        id=created_user.id,
+        name=created_user.name,
+        email=created_user.email,
+        created_at=created_user.created_at,
+        updated_at=created_user.updated_at
+    )
+
+    print("response:", response)
+    return response
 
 class UpdateUser(BaseModel):
     name: str | None = Field(min_length=2, max_length=32, default=None)
