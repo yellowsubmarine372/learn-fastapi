@@ -8,6 +8,8 @@ from pydantic import BaseModel, EmailStr, Field
 from containers import Container
 from user.application.user_service import UserService
 
+from common.auth import CurrentUser, get_current_user
+
 router = APIRouter(prefix="/users")
 
 class CreateUserBody(BaseModel):
@@ -21,6 +23,16 @@ class UserResponse(BaseModel):
     email: str
     created_at: datetime
     updated_at: datetime
+
+class UpdateUserBody(BaseModel):
+    name: str | None = Field(min_length=2, max_length=32, default=None)
+    password: str | None = Field(min_length=8, max_length=32, default=None)
+
+class GetUserResponse(BaseModel):
+    total_count: int
+    page: int
+    users: list[UserResponse]
+
 
 @router.post("", status_code=201)
 @inject
@@ -48,39 +60,35 @@ def create_user(
     print("response:", response)
     return response
 
-class UpdateUser(BaseModel):
-    name: str | None = Field(min_length=2, max_length=32, default=None)
-    password: str | None = Field(min_length=8, max_length=32, default=None)
-    
-@router.put("/{user_id}")
+@router.put("", response_model=UserResponse)
 @inject
 def update_user(
-    user_id: str,
-    user: UpdateUser,
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    body: UpdateUserBody,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
     user = user_service.update_user(
-        user_id = user_id,
-        name = user.name,
-        password = user.password
+        user_id = current_user.id,
+        name = body.name,
+        password = body.password
     )
     
     return user
 
-class GetUserResponse(BaseModel):
-    total_count: int
-    page: int
-    users: list[UserResponse]
-
 @router.get("")
 @inject
 def get_users(
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    user_service: UserService = Depends(Provide[Container.user_service]),
     page: int = 1,
     items_per_page: int = 10,
-    user_service: UserService = Depends(Provide[Container.user_service]),
 ) -> GetUserResponse:
-    total_count, users = user_service.get_users(page, items_per_page)
-    
+    if current_user.role == "ADMIN":
+        total_count, users = user_service.get_users(page, items_per_page)
+    else:
+        user = user_service.get_user_by_id(page, items_per_page)
+        total_count, users = 1, [user]
+       
     return {
         "total_count": total_count,
         "page": page,
@@ -90,12 +98,10 @@ def get_users(
 @router.delete("", status_code=204)
 @inject
 def delete_user(
-    user_id: str,
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
-    # TODO: 다른 유저를 삭제할 수 없도록 토큰에서 유저 아이디를 구한다.
-    
-    user_service.delete_user(user_id)
+    user_service.delete_user(current_user.id)
     
 @router.post("/login")
 @inject

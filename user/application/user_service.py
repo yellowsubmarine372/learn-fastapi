@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 
 from utils.crypto import Crypto
 
-from common.auth import create_access_token
+from common.auth import Role, create_access_token
 
 
 class UserService:
@@ -75,6 +75,9 @@ class UserService:
         users = self.user_repo.get_users(page, items_per_page)
         
         return users
+
+    def get_user_by_id(self, user_id: str) -> User:
+        return self.user_repo.find_by_id(user_id)
     
     def delete_user(self, user_id: str):
         self.user_repo.delete(user_id)
@@ -86,7 +89,8 @@ class UserService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
         access_token = create_access_token(
-            payload={"user_id": user.id}
+            payload={"user_id": user.id},
+            role = Role.USER,
         )
 
         return access_token
