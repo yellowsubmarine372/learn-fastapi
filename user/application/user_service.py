@@ -1,9 +1,10 @@
 from dependency_injector.wiring import inject
 from ulid import ULID
 from datetime import datetime
+from user.application.email_service import EmailService
 from user.domain.user import User
 from user.domain.repository.user_repo import IUserRepository
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 
 from utils.crypto import Crypto
 
@@ -14,13 +15,15 @@ class UserService:
     @inject
     def __init__(
         self,
-        user_repo: IUserRepository
+        user_repo: IUserRepository,
+        email_service: EmailService
         ):
         self.user_repo = user_repo
+        self.email_service = email_service
         self.ulid = ULID()
         self.crypot = Crypto()
         
-    def create_user(self, name: str, email: str, password: str):
+    def create_user(self, background_tasks: BackgroundTasks, name: str, email: str, password: str):
         _user = None
         
         try:
@@ -50,6 +53,10 @@ class UserService:
         self.user_repo.save(user)
 
         print("user", user)
+
+        background_tasks.add_task(
+            self.email_service.send_email, user.email
+        )
         
         return user
     
